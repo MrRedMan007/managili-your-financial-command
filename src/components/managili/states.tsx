@@ -1,0 +1,5 @@
+import { AlertTriangle, Inbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
+export function EmptyState({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) { return <div className="flex min-h-40 flex-col items-center justify-center gap-3 border border-dashed border-border p-6 text-center"><Inbox className="size-6 text-muted-foreground"/><p className="text-sm text-muted-foreground">{title}</p>{action && onAction && <Button size="sm" onClick={onAction}>{action}</Button>}</div>; }
+export function ErrorState({ retry }: { retry: () => void }) { return <div role="alert" className="flex min-h-40 flex-col items-center justify-center gap-3 border border-negative/40 p-6"><AlertTriangle className="text-negative"/><p>Financial data could not be loaded.</p><Button variant="outline" onClick={retry}>Try again</Button></div>; }
+export function PageSkeleton() { return <div className="space-y-5 animate-pulse"><div className="h-10 w-52 bg-muted"/><div className="grid gap-4 md:grid-cols-3">{[1,2,3].map(i=><div key={i} className="h-32 bg-card"/>)}</div><div className="h-80 bg-card"/></div>; }
