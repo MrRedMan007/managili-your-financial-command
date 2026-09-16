@@ -1,0 +1,9 @@
+{
+  "name": "Managili Personal Finance OS",
+  "short_name": "Managili",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#11100f",
+  "theme_color": "#dc3f32",
+  "description": "Accounts, transactions, budgets, goals, debts, bills, and net worth."
+}
