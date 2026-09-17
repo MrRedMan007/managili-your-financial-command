@@ -17,6 +17,7 @@ export function QuickAdd({ compact = false }: { compact?: boolean }) {
   const queryClient = useQueryClient();
   const activeAccounts = data.accounts.filter((account) => !account.is_archived);
   const categories = data.categories.filter((category) => category.type === type);
+  const recent = typeof localStorage === "undefined" ? null : JSON.parse(localStorage.getItem("managili-quick-add") ?? "null") as { account?: string; category?: string; paymentMethod?: string } | null;
   const mutation = useMutation({
     mutationFn: async (form: FormData) => {
       const accountId = String(form.get("account"));
@@ -36,7 +37,7 @@ export function QuickAdd({ compact = false }: { compact?: boolean }) {
         if (error) throw error;
       }
     },
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["finance"] }); setOpen(false); },
+    onSuccess: async (_, form) => { localStorage.setItem("managili-quick-add", JSON.stringify({ account: String(form.get("account")), category: String(form.get("category") || ""), paymentMethod: String(form.get("paymentMethod") || "") })); await queryClient.invalidateQueries({ queryKey: ["finance"] }); setOpen(false); },
   });
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button size={compact ? "icon" : "default"} className={compact ? "size-14 rounded-full shadow-xl" : "w-full justify-start"}><Plus/>{!compact && "Quick add"}</Button></DialogTrigger>
@@ -45,9 +46,9 @@ export function QuickAdd({ compact = false }: { compact?: boolean }) {
       <div className="grid grid-cols-3 gap-2">{(["expense","income","transfer"] as EntryType[]).map((item) => <Button key={item} type="button" variant={type === item ? "default" : "outline"} onClick={() => setType(item)}>{item === "expense" ? <ArrowUpRight/> : item === "income" ? <ArrowDownLeft/> : <ArrowRightLeft/>}{item}</Button>)}</div>
       <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); mutation.mutate(new FormData(event.currentTarget)); }}>
         <Field label="Amount"><Input name="amount" inputMode="decimal" placeholder="0.000" required autoFocus /></Field>
-        <Field label="Account"><select name="account" required className="field"><option value="">Select account</option>{activeAccounts.map(a=><option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select></Field>
-        {type === "transfer" ? <><Field label="To account"><select name="toAccount" required className="field"><option value="">Select destination</option>{activeAccounts.map(a=><option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select></Field><Field label="Destination amount"><Input name="toAmount" inputMode="decimal" placeholder="Same as amount" /></Field><Field label="Exchange rate"><Input name="rate" inputMode="decimal" defaultValue="1" /></Field></> : <Field label="Category"><select name="category" className="field"><option value="">Uncategorized</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
-        <div className="grid grid-cols-2 gap-3"><Field label="Date"><Input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required /></Field>{type !== "transfer" && <Field label="Payment method"><Input name="paymentMethod" placeholder="Cash, card…" /></Field>}</div>
+        <Field label="Account"><select name="account" required className="field" defaultValue={recent?.account ?? ""}><option value="">Select account</option>{activeAccounts.map(a=><option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select></Field>
+        {type === "transfer" ? <><Field label="To account"><select name="toAccount" required className="field"><option value="">Select destination</option>{activeAccounts.map(a=><option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select></Field><Field label="Destination amount"><Input name="toAmount" inputMode="decimal" placeholder="Same as amount" /></Field><Field label="Exchange rate"><Input name="rate" inputMode="decimal" defaultValue="1" min="0.000001" step="any" required /></Field></> : <Field label="Category"><select name="category" className="field" defaultValue={recent?.category ?? ""}><option value="">Uncategorized</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
+        <div className="grid grid-cols-2 gap-3"><Field label="Date"><Input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required /></Field>{type !== "transfer" && <Field label="Payment method"><Input name="paymentMethod" placeholder="Cash, card…" defaultValue={recent?.paymentMethod ?? ""} /></Field>}</div>
         <Field label="Note"><Input name="note" placeholder="Optional note" /></Field>
         {mutation.error && <p className="text-sm text-negative" role="alert">{mutation.error.message}</p>}
         <Button disabled={mutation.isPending} className="mt-2">{mutation.isPending ? "Saving…" : "Save entry"}</Button>
